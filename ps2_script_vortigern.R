@@ -15,6 +15,7 @@ library(tidyverse)
 
 unemp_raw = read_rds("data/unemp_raw.rds")
 
+# Make raw data more readable
 unemp <- unemp_raw |>
   rename(unemployment_rate = price) |>
   mutate(
@@ -27,6 +28,7 @@ unemp <- unemp_raw |>
     )
   )
 
+# Fill in month with missing data from govt shutdown
 unemp <- unemp |>
   arrange(region, date) |>
   group_by(region) |>
@@ -39,17 +41,48 @@ unemp <- unemp |>
   ) |>
   ungroup()
 
+# Create a new column with the monthly change in the unemployment rate 
 unemp <- unemp |>
   arrange(region, date) |>
   group_by(region) |>
   mutate(unemployment_rate_change = unemployment_rate - lag(unemployment_rate)) |>
   ungroup()
 
+# Create new df containing only observations from 2015 onward
+unemp_recent <- unemp |> 
+  filter(date >= as.Date("2015-01-01"))
+
+# Find mean, min, max unemployment rate across the whole sample (full set, and recent set)
 unemp_summary <- unemp |>
-  arrange(region, date) |>
   group_by(region) |>
-    unemp_recent = filter(date >= as.Date("2015-01-01")) |>
-    mutate(unemp_recent)
-    ungroup()
+  summarize(
+    mean_rate = mean(unemployment_rate, na.rm = TRUE),
+    min_rate  = min(unemployment_rate,  na.rm = TRUE),
+    max_rate  = max(unemployment_rate,  na.rm = TRUE)
+  )
+
+unemp_recent_summary <- unemp_recent |>
+  group_by(region) |>
+  summarize(
+    mean_rate = mean(unemployment_rate, na.rm = TRUE),
+    min_rate  = min(unemployment_rate,  na.rm = TRUE),
+    max_rate  = max(unemployment_rate,  na.rm = TRUE)
+  )
+
+# Find Extrema 
+unemp_top_increases <- unemp |> 
+  slice_max(unemployment_rate_change, n = 5, with_ties = TRUE)
   
-unemp
+unemp_top_decreases <- unemp |> 
+  slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
+
+# Extrema Excluding Covid
+unemp_top_increases_no_covid <- unemp |> 
+  filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
+  slice_max(unemployment_rate_change, n = 5, with_ties = TRUE)
+  
+unemp_top_decreases_no_covid <- unemp |> 
+  filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
+  slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
+  
+  
