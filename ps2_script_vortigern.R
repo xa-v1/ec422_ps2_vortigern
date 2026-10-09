@@ -76,7 +76,7 @@ unemp_top_increases <- unemp |>
 unemp_top_decreases <- unemp |> 
   slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
 
-# Extrema Excluding Covid
+# Extrema Excluding COVID
 unemp_top_increases_no_covid <- unemp |> 
   filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
   slice_max(unemployment_rate_change, n = 5, with_ties = TRUE)
@@ -84,5 +84,24 @@ unemp_top_increases_no_covid <- unemp |>
 unemp_top_decreases_no_covid <- unemp |> 
   filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
   slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
-  
-  
+
+# Line Chart, Combined
+ggplot(unemp, aes(x = date, y = unemployment_rate, color = factor(region))) +
+  geom_line() +
+  labs(title = "US Unemployment Rates, Cumulative and by Region", x = "Time (Years)", y = "Unemployment Rate (%)", color = "Region") +
+  theme_minimal()
+
+# Multiple Line Charts
+ggplot(unemp, aes(x = date, y = unemployment_rate, color = factor(region))) +
+  geom_line(show.legend = FALSE) +
+  facet_wrap(~region, axes = "all") + 
+  labs(title = "US Unemployment Rate by Region", x = "Time (Years)", y = "Unemployment Rate (%)", color = "Region") +
+  theme_minimal() 
+
+# Bar Chart
+ggplot(unemp_summary, aes(x = fct_reorder(region, mean_rate), y = mean_rate)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Average Unemployent Rate by Region (1976-2026)", x = "Region", y = "Mean Unemployment Rate (%)")
+
+
+
