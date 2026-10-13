@@ -78,17 +78,17 @@ unemp_top_decreases <- unemp |>
 
 # Extrema Excluding COVID
 unemp_top_increases_no_covid <- unemp |> 
-  filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
+  filter(date < as.Date("2020-01-01") | date > as.Date("2020-12-01")) |> 
   slice_max(unemployment_rate_change, n = 5, with_ties = TRUE)
   
 unemp_top_decreases_no_covid <- unemp |> 
-  filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
+  filter(date < as.Date("2020-01-01") | date > as.Date("2020-12-01")) |> 
   slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
 
 # Line Chart, Combined
 ggplot(unemp, aes(x = date, y = unemployment_rate, color = factor(region))) +
   geom_line() +
-  labs(title = "US Unemployment Rates, Cumulative and by Region", x = "Time (Years)", y = "Unemployment Rate (%)", color = "Region") +
+  labs(title = "US Unemployment Rates by Region", x = "Time (Years)", y = "Unemployment Rate (%)", color = "Region") +
   theme_minimal()
 
 # Multiple Line Charts
@@ -101,10 +101,9 @@ ggplot(unemp, aes(x = date, y = unemployment_rate, color = factor(region))) +
 # Bar Chart
 ggplot(unemp_summary, aes(x = fct_reorder(region, mean_rate), y = mean_rate)) + 
   geom_bar(stat = "identity") +
-  labs(title = "Average Unemployent Rate by Region (1976-2026)", x = "Region", y = "Mean Unemployment Rate (%)")
+  labs(title = "Average Unemployment Rate by Region (1976-2026)", x = "Region", y = "Mean Unemployment Rate (%)")
 
 # Chart of my choice 
-
 onlyHousingCrisissummary <- unemp |> 
   filter(date >= as.Date("2006-01-01") & date <= as.Date("2009-12-01")) |> 
   group_by(region) |>
@@ -116,13 +115,13 @@ onlyHousingCrisissummary <- unemp |>
 
 ggplot(onlyHousingCrisissummary, aes(x = fct_reorder(region, max_rate), y = max_rate)) + 
   geom_bar(stat = "identity") +
-  labs(title = "Peak Unemployment Rate During the 2008 Housing Crisis, by Region ", x = "Region", y = "Mean Unemployment Rate (%)")
+  labs(title = "Peak Unemployment Rate During the 2008 Housing Crisis, by Region ", x = "Region", y = "Max Unemployment Rate (%)")
 
 # I plotted the peak unemployment rates for each region during the 2008 housing crisis. 
-# The chart shows that California was affected the most, while Texas was effected the least. 
-# I was interested in why Texas was effected less severely, so I  looked it up, and it appears that 
-# this was due to the fact that Texas had a more diversified economy. Their oil and gas sectors were
-# either growing or stable during the crisis, partially offsetting the job losses in other areas. 
+# The chart shows that California had the highest unemployment, while Texas had the lowest. 
+# I was interested in why, so I looked it up, and it appears that this was due to the fact that 
+# Texas had a more diversified economy. Their oil and gas sectors were either growing or stable 
+# during the crisis, partially offsetting the job losses in other areas. 
   
   
   

@@ -1,0 +1,174 @@
+---
+title: "Problem Set 2"
+author: "Xavier Vortigern"
+date: today
+format: 
+  html: 
+    toc: true
+    embed-resources: true
+---
+
+**GitHub Repo:** <https://github.com/xa-v1/ec422_ps2_vortigern>
+
+```{r, include=FALSE}
+library(tidyquant)
+library(tidyverse)
+library(knitr)
+```
+
+## Data
+
+```{r}
+#| echo: false
+unemp_raw <- read_rds("data/unemp_raw.rds")
+head(unemp_raw)
+```
+
+The data used in this problem set contains the monthly unemployment rates for California, Texas, New York, Oregon, and the US as a whole. It is sourced from FRED, begins January 1976, and ends September 2026. The "price" column here refers to the unemployment rate as a percentage.
+
+## Wrangling
+
+```{r, include=TRUE}
+# Make raw data more readable
+unemp <- unemp_raw |>
+  rename(unemployment_rate = price) |>
+  mutate(
+    region = case_when(
+      symbol == "UNRATE" ~ "United States",
+      symbol == "ORUR" ~ "Oregon",
+      symbol == "CAUR" ~ "California",
+      symbol == "TXUR" ~ "Texas",
+      symbol == "NYUR" ~ "New York",
+    )
+  )
+
+# Fill in month with missing data from govt shutdown
+unemp <- unemp |>
+  arrange(region, date) |>
+  group_by(region) |>
+  mutate(
+    unemployment_rate = replace(
+      unemployment_rate,
+      date == as.Date("2025-10-01"),
+      unemployment_rate[date == as.Date("2025-09-01")]
+    )
+  ) |>
+  ungroup()
+
+# Create a new column with the monthly change in the unemployment rate 
+unemp <- unemp |>
+  arrange(region, date) |>
+  group_by(region) |>
+  mutate(unemployment_rate_change = unemployment_rate - lag(unemployment_rate)) |>
+  ungroup()
+
+# Create new df containing only observations from 2015 onward
+unemp_recent <- unemp |> 
+  filter(date >= as.Date("2015-01-01"))
+
+# Find mean, min, max unemployment rate across the whole sample (full set, and recent set)
+unemp_summary <- unemp |>
+  group_by(region) |>
+  summarize(
+    mean_rate = mean(unemployment_rate, na.rm = TRUE),
+    min_rate  = min(unemployment_rate,  na.rm = TRUE),
+    max_rate  = max(unemployment_rate,  na.rm = TRUE)
+  )
+
+unemp_recent_summary <- unemp_recent |>
+  group_by(region) |>
+  summarize(
+    mean_rate = mean(unemployment_rate, na.rm = TRUE),
+    min_rate  = min(unemployment_rate,  na.rm = TRUE),
+    max_rate  = max(unemployment_rate,  na.rm = TRUE)
+  )
+
+# Find Extrema 
+unemp_top_increases <- unemp |> 
+  slice_max(unemployment_rate_change, n = 5, with_ties = TRUE)
+
+unemp_top_decreases <- unemp |> 
+  slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
+
+# Extrema Excluding COVID
+unemp_top_increases_no_covid <- unemp |> 
+  filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
+  slice_max(unemployment_rate_change, n = 5, with_ties = TRUE)
+
+unemp_top_decreases_no_covid <- unemp |> 
+  filter(date < as.Date("2020-01-01") | date > as.Date("2021-12-01")) |> 
+  slice_min(unemployment_rate_change, n = 5, with_ties = TRUE)
+```
+
+The two summary tables give the average unemployment rate for each region, as well as each regions minimum and maximum unemployment rate. The recent summary table calculates these values only using observations starting in 2015, while the regular summary table uses the full range.
+
+```{r}
+#| echo: false
+kable(unemp_summary)
+```
+
+```{r}
+#| echo: false
+kable(unemp_recent_summary)
+```
+
+The top increases/decreases with no COVID tables give the sets biggest month to month change in unemployment rates across regions, excluding COVID years from the sample.
+
+```{r}
+#| echo: false
+kable(unemp_top_increases_no_covid)
+```
+
+```{r}
+#| echo: false
+kable(unemp_top_decreases_no_covid)
+```
+
+## Visualization 
+
+```{r}
+# Line Chart, Combined
+ggplot(unemp, aes(x = date, y = unemployment_rate, color = factor(region))) +
+  geom_line() +
+  labs(title = "US Unemployment Rates by Region", x = "Time (Years)", y = "Unemployment Rate (%)", color = "Region") +
+  theme_minimal()
+```
+
+```{r}
+# Multiple Line Charts
+ggplot(unemp, aes(x = date, y = unemployment_rate, color = factor(region))) +
+  geom_line(show.legend = FALSE) +
+  facet_wrap(~region, axes = "all") + 
+  labs(title = "US Unemployment Rate by Region", x = "Time (Years)", y = "Unemployment Rate (%)", color = "Region") +
+  theme_minimal() 
+```
+
+```{r}
+# Bar Chart
+ggplot(unemp_summary, aes(x = fct_reorder(region, mean_rate), y = mean_rate)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Average Unemployment Rate by Region (1976-2026)", x = "Region", y = "Mean Unemployment Rate (%)")
+```
+
+```{r}
+# Chart of my choice 
+onlyHousingCrisissummary <- unemp |> 
+  filter(date >= as.Date("2006-01-01") & date <= as.Date("2009-12-01")) |> 
+  group_by(region) |>
+  summarize(
+    mean_rate = mean(unemployment_rate, na.rm = TRUE),
+    min_rate  = min(unemployment_rate,  na.rm = TRUE),
+    max_rate  = max(unemployment_rate,  na.rm = TRUE)
+  )
+
+ggplot(onlyHousingCrisissummary, aes(x = fct_reorder(region, max_rate), y = max_rate)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Peak Unemployment Rate During the 2008 Housing Crisis, by Region ", x = "Region", y = "Max Unemployment Rate (%)")
+
+```
+
+I plotted the peak unemployment rates for each region during the 2008 housing crisis. The chart shows that California was affected the most, while Texas was effected the least. I was interested in why Texas was effected less severely, so I looked it up, and it appears that this was due to the fact that Texas had a more diversified economy. Their oil and gas sectors were either growing or stable during the crisis, partially offsetting the job losses in other areas.
+
+## Reflection
+
+Overall, I felt like the whole process was relatively straightforward. I felt pretty comfortable with both R and Github coming into the class so I didn't hit any roadblocks there, however I did have some issues running code in Quarto. I spent a good 20 minutes trying to figure out why my code was working fine in the console and failing to render in the Quarto doc, but Claude was able to figure out the issue eventually. I don't want to imagine how much extra time was spent troubleshooting code before AI. After working that kink out, I feel more comfortable with Quarto, and I also got a lot more comfortable using Git in the Terminal.
