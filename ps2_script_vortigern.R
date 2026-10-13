@@ -103,5 +103,29 @@ ggplot(unemp_summary, aes(x = fct_reorder(region, mean_rate), y = mean_rate)) +
   geom_bar(stat = "identity") +
   labs(title = "Average Unemployent Rate by Region (1976-2026)", x = "Region", y = "Mean Unemployment Rate (%)")
 
+# Chart of my choice 
 
+onlyHousingCrisissummary <- unemp |> 
+  filter(date >= as.Date("2006-01-01") & date <= as.Date("2009-12-01")) |> 
+  group_by(region) |>
+  summarize(
+    mean_rate = mean(unemployment_rate, na.rm = TRUE),
+    min_rate  = min(unemployment_rate,  na.rm = TRUE),
+    max_rate  = max(unemployment_rate,  na.rm = TRUE)
+  )
 
+ggplot(onlyHousingCrisissummary, aes(x = fct_reorder(region, max_rate), y = max_rate)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Peak Unemployment Rate During the 2008 Housing Crisis, by Region ", x = "Region", y = "Mean Unemployment Rate (%)")
+
+# I plotted the peak unemployment rates for each region during the 2008 housing crisis. 
+# The chart shows that California was affected the most, while Texas was effected the least. 
+# I was interested in why Texas was effected less severely, so I  looked it up, and it appears that 
+# this was due to the fact that Texas had a more diversified economy. Their oil and gas sectors were
+# either growing or stable during the crisis, partially offsetting the job losses in other areas. 
+  
+  
+  
+  
+  
+  
